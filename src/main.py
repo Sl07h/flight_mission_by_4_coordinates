@@ -40,7 +40,17 @@ def convert_meters_to_lon(longitude_m, latitude):
     return longitude_m / ratio
 
 
-def rotate(p, c, angle, lat):
+def rotate_in_meters(p, c, angle):
+    # вращаем точку вокруг другой на заданный угол
+    sin_a = sin(angle)
+    cos_a = cos(angle)
+    y, x = p - c
+    X = x*cos_a - y*sin_a
+    Y = x*sin_a + y*cos_a
+    return [Y+c[0], X+c[1]]
+
+
+def rotate_in_degrees(p, c, angle, lat):
     # вращаем точку вокруг другой на заданный угол, на заданной широте
     sin_a = sin(angle)
     cos_a = cos(angle)
@@ -105,17 +115,17 @@ H_const = 3648.0        # высота
 # fov = 77.0              # угол обзора камеры DJI Fantom 4 PRO v2.0
 fov = 65.5              # угол обзора камеры DJI Mavic 2
 
-image_cross = 0.5       # пересечение изображений на k%
+image_cross = 0.25      # пересечение изображений на k%
 height = 3.0            # высота полёта
 speed_m_s = 0.5         # скорость в метрах в секунду
 photo_interval = 2.0    # интервал между кадрами в секундах
-path_4_points = 'missions/icig.txt'
-# path_4_points = 'missions/field0.txt'
+path_4_points = 'icig.txt'
+# path_4_points = 'field0.txt'
 
 
 if __name__ == '__main__':
     W, H, diag = calc_image_size(height, fov, W_const, H_const)
-    print('Исходный размер поля под дроном:\t\t{:.3f}x{:.3f}м'.format(W, H))
+    print(f'Исходный размер поля под дроном:\t\t{W:.3f}x{H:.3f}м')
     s_old = W*H
     w_old = W
     h_old = H
@@ -125,13 +135,11 @@ if __name__ == '__main__':
     W = W - 2*dw
     H = H - 2*dh
     s_new = W*H
-    print(
-        'При перекрытии 50% размер поля под дроном:\t{:.3f}x{:.3f}м'.format(W, H))
-    print('Отношение площадей:\t\t\t\t{:.3f} и {:.3f}'.format(
-        s_new / s_old, image_cross))
+    s_ratio = s_new / s_old
     capture_interval_s = (2*(H / 2.0 - dh) + dh) / speed_m_s
-    print('Интервал между снимками:\t\t\t{:.3f} {:.3f}'.format(
-        capture_interval_s, photo_interval))
+    print(f'При перекрытии {int(image_cross*100)}% размер поля под дроном:\t{W:.3f}x{H:.3f}м')
+    print(f'Отношение площадей:\t\t\t\t{s_ratio:.3f} и {image_cross:.3f}')
+    print(f'Интервал между снимками:\t\t\t{capture_interval_s:.3f} {photo_interval:.3f}')
 
     # геометрия для простоты кода
     x_axis = np.array([1.0, 0.0])
@@ -144,19 +152,22 @@ if __name__ == '__main__':
     borders = np.ndarray((4, 2), np.float64)
     lengths = np.ndarray(4, np.float64)
     lengths_i = np.ndarray((4, 2), np.float64)
-    points = np.loadtxt(path_4_points)
+    points = np.loadtxt(f'missions/{path_4_points}')
     for i, point in enumerate(points):
         borders[i][0] = convert_to_coord(point[:3])
         borders[i][1] = convert_to_coord(point[3:])
 
     W_lat = convert_meters_to_lat(W)
     H_lat = convert_meters_to_lat(H)
-
     W_lon = convert_meters_to_lon(W, borders[0][0])
     H_lon = convert_meters_to_lon(H, borders[0][0])
 
-    m_lat, m_long = borders.mean(axis=0)
+    W_lat_old = convert_meters_to_lat(w_old)
+    H_lat_old = convert_meters_to_lat(h_old)
+    W_lon_old = convert_meters_to_lon(w_old, borders[0][0])
+    H_lon_old = convert_meters_to_lon(h_old, borders[0][0])
 
+    m_lat, m_long = borders.mean(axis=0)
     m = folium.Map([m_lat, m_long], tiles=None,
                    prefer_canvas=True, control_scale=True, zoom_start=18)
     base_map = folium.FeatureGroup(name='Basemap', overlay=True, control=False)
@@ -222,7 +233,7 @@ if __name__ == '__main__':
     print(angle, vector_m, x_axis)
 
     for i, point in enumerate(borders):
-        borders[i] = rotate(point, start_point, radians(angle), m_lat)
+        borders[i] = rotate_in_degrees(point, start_point, radians(angle), m_lat)
     borders_closed = np.append(borders.copy(), [borders.copy()[0]], axis=0)
     folium.PolyLine(borders_closed, color='#007800').add_to(layer_frames)
     folium.PolyLine(borders_closed, color='#007800').add_to(layer_traces)
@@ -234,9 +245,6 @@ if __name__ == '__main__':
     n_count = int((max_lat - point1[0]) / W_lat)
     n_count2 = convert_lat_to_meters(max_lat - point1[0]) / W
     roads = np.ndarray((n_count, 2), np.float64)
-
-    # for i in range(4):
-    #     folium.Marker(list(borders[i]), popup=str(i)).add_to(layer_traces)
 
     #    2--------3
     #   /          \
@@ -302,11 +310,6 @@ if __name__ == '__main__':
             trace_r[n13-1] = [y+W_lat/2.0, x]
             n13 += 1
 
-    # for point in trace_l:
-    #     folium.Marker(list(point)).add_to(m)
-    # for point in trace_r:
-    #     folium.Marker(list(point)).add_to(m)
-
     for i in range(min_n):
         folium.PolyLine([points_l[i], points_r[i]]).add_to(layer_traces)
 
@@ -318,14 +321,12 @@ if __name__ == '__main__':
         l_c = []
         for i in range(n):
             point = pl.copy() + np.array([0.0, dx/2.0 + dx*i])
-            # point = pl.copy() + np.array([0.0, H_lon/2.0 + H_lon*i])
-            # folium.Marker(list(point)).add_to(layer_traces)
             frame = np.array([
-                [W_lat/2.0,  H_lon/2.0],
-                [-W_lat/2.0,  H_lon/2.0],
-                [-W_lat/2.0, -H_lon/2.0],
-                [W_lat/2.0, -H_lon/2.0],
-                [W_lat/2.0,  H_lon/2.0]
+                [W_lat_old/2.0,  H_lon_old/2.0],
+                [-W_lat_old/2.0,  H_lon_old/2.0],
+                [-W_lat_old/2.0, -H_lon_old/2.0],
+                [W_lat_old/2.0, -H_lon_old/2.0],
+                [W_lat_old/2.0,  H_lon_old/2.0]
             ])
             folium.PolyLine(list(point+frame)).add_to(layer_frames)
 
@@ -336,12 +337,13 @@ if __name__ == '__main__':
                 [w_old/2.0, -h_old/2.0],
                 [w_old/2.0,  h_old/2.0]
             ])
-            point = rotate(point, start_point, radians(-angle), m_lat)
+
+            point = rotate_in_degrees(point, start_point, radians(-angle), m_lat)
             for j, p in enumerate(frame):
-                p = rotate(p, np.array([0.0, 0.0]), radians(-angle), m_lat)
+                p = rotate_in_meters(p, np.array([0.0, 0.0]), radians(-angle))
                 y, x = p
                 y = convert_meters_to_lat(y)
-                x = convert_meters_to_lon(x, borders[0][0])
+                x = convert_meters_to_lon(x, m_lat)
                 frame[j] = np.array([y, x])
             l_c += [list(point)]
             folium.PolyLine(list(point+frame)).add_to(layer_result)
@@ -365,5 +367,4 @@ if __name__ == '__main__':
     folium.LayerControl(collapsed=False).add_to(m)
     MeasureControl().add_to(m)
     Draw(export=True).add_to(m)
-    filename = path_4_points.split('/')[1][:-4]
-    m.save(f'maps/fight_mission_{filename}.html')
+    m.save(f'maps/fight_mission_{path_4_points[:-4]}.html')
