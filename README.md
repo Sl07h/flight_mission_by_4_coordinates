@@ -18,16 +18,16 @@
 
 
 Исходная область:
-![](examples/1.png)
+![](docs/1.png)
 
 Пути:
-![](examples/2.png)
+![](docs/2.png)
 
 Охват кадров:
-![](examples/3.png)
+![](docs/3.png)
 
 Результат:
-![](examples/4.png)
+![](docs/4.png)
 
 
 
@@ -36,9 +36,9 @@
 
 25%
 
-![](examples/image_cross_25_percent.png)
+![](docs/image_cross_25_percent.png)
 
 50%
 
-![](examples/image_cross_50_percent.png)
+![](docs/image_cross_50_percent.png)
 
