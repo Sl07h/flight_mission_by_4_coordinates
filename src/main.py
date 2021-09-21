@@ -119,7 +119,7 @@ image_cross = 0.25      # пересечение изображений на k%
 height = 3.0            # высота полёта
 speed_m_s = 0.5         # скорость в метрах в секунду
 photo_interval = 2.0    # интервал между кадрами в секундах
-path_4_points = 'icig.txt'
+path_4_points = 'icg.txt'
 # path_4_points = 'field0.txt'
 
 
