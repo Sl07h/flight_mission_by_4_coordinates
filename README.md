@@ -42,3 +42,12 @@
 
 ![](docs/image_cross_50_percent.png)
 
+## Установка
+```
+pip install requirements.txt
+```
+
+## Запуск
+```
+python src/main.py
+```
