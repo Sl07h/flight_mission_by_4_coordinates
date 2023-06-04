@@ -1,4 +1,6 @@
-﻿import numpy as np
+﻿import argparse
+import os
+import numpy as np
 import folium
 from folium.plugins import Draw, MeasureControl
 from math import sqrt, sin, cos, radians, tan, acos, degrees
@@ -124,6 +126,12 @@ path_4_points = 'icg.txt'
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Инструмент для создания лётного задания для Litchi')
+    parser.add_argument('--path_4_points', help='путь к файлу с 4 точками')
+    args = parser.parse_args()
+    path_4_points = args.path_4_points
+    file_name = os.path.splitext(os.path.basename(path_4_points))[0]
+
     W, H, diag = calc_image_size(height, fov, W_const, H_const)
     print(f'Исходный размер поля под дроном:\t\t{W:.3f}x{H:.3f}м')
     s_old = W*H
@@ -152,7 +160,7 @@ if __name__ == '__main__':
     borders = np.ndarray((4, 2), np.float64)
     lengths = np.ndarray(4, np.float64)
     lengths_i = np.ndarray((4, 2), np.float64)
-    points = np.loadtxt(f'missions/{path_4_points}')
+    points = np.loadtxt(path_4_points)
     for i, point in enumerate(points):
         borders[i][0] = convert_to_coord(point[:3])
         borders[i][1] = convert_to_coord(point[3:])
@@ -367,4 +375,4 @@ if __name__ == '__main__':
     folium.LayerControl(collapsed=False).add_to(m)
     MeasureControl().add_to(m)
     Draw(export=True).add_to(m)
-    m.save(f'maps/fight_mission_{path_4_points[:-4]}.html')
+    m.save(f'maps/fight_mission_{file_name}.html')
