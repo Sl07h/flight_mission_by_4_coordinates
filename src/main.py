@@ -161,9 +161,12 @@ if __name__ == '__main__':
     lengths = np.ndarray(4, np.float64)
     lengths_i = np.ndarray((4, 2), np.float64)
     points = np.loadtxt(path_4_points)
-    for i, point in enumerate(points):
-        borders[i][0] = convert_to_coord(point[:3])
-        borders[i][1] = convert_to_coord(point[3:])
+    if points.shape == (4,6):
+        for i, point in enumerate(points):
+            borders[i][0] = convert_to_coord(point[:3])
+            borders[i][1] = convert_to_coord(point[3:])
+    else:
+        borders = points.copy()
 
     W_lat = convert_meters_to_lat(W)
     H_lat = convert_meters_to_lat(H)
