@@ -185,11 +185,22 @@ if __name__ == '__main__':
     folium.TileLayer(tiles='OpenStreetMap', max_zoom=23).add_to(base_map)
     base_map.add_to(m)
 
+    # https://gis.stackexchange.com/questions/290861/python-folium-package-for-satellite-map
+    layer_satellite = folium.FeatureGroup(name='спутник', show=False)
+    folium.TileLayer(
+        tiles = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr = 'Esri',
+        name = 'Esri Satellite',
+        overlay = False,
+        control = True
+       ).add_to(layer_satellite)
+    layer_satellite.add_to(m)
+
     borders_closed = np.append(borders.copy(), [borders.copy()[0]], axis=0)
     layer_source = folium.FeatureGroup(name='оригинал', show=False)
-    layer_traces = folium.FeatureGroup(name='пути', show=True)
+    layer_traces = folium.FeatureGroup(name='пути', show=False)
     layer_frames = folium.FeatureGroup(name='рамки', show=False)
-    layer_result = folium.FeatureGroup(name='результат', show=False)
+    layer_result = folium.FeatureGroup(name='результат', show=True)
 
     folium.PolyLine(borders_closed, color='#007800').add_to(layer_source)
     folium.PolyLine(borders_closed, color='#007800').add_to(layer_result)
